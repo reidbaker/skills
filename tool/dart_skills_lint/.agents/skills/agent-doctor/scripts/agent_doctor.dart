@@ -50,6 +50,7 @@ void main(List<String> arguments) async {
   }
 
   bool needsInstall = false;
+  final List<String> allMissingSkills = [];
 
   for (final File lockFile in lockFiles) {
     final List<String> missing = checkMissingSkills(lockFile);
@@ -58,6 +59,7 @@ void main(List<String> arguments) async {
       for (final String skill in missing) {
         print('  - $skill');
       }
+      allMissingSkills.addAll(missing);
       needsInstall = true;
     }
   }
@@ -67,20 +69,35 @@ void main(List<String> arguments) async {
       print('\n[Dry-run] Missing skills detected.');
       for (final File lockFile in lockFiles) {
         print(
-          '[Dry-run] Would run: npx skill experimental_install in directory: ${lockFile.parent.path}',
+          '[Dry-run] Would run: npx skills experimental_install in directory: ${lockFile.parent.path}',
         );
       }
       exit(1);
     } else {
       print('\nMissing skills detected. Bootstrapping environment by running npx install...');
       bool success = true;
+      bool has403Error = false;
       for (final File lockFile in lockFiles) {
         final Directory lockFileDir = lockFile.parent;
-        final bool installSuccess = await runNpxInstall(lockFileDir);
-        if (!installSuccess) {
+        final InstallResult result = await runNpxInstall(lockFileDir);
+        if (!result.success) {
           success = false;
+          if (result.is403Error) {
+            has403Error = true;
+          }
         }
       }
+
+      if (has403Error) {
+        print('\n======================================================================');
+        print('ERROR: NPM Registry Authentication Failure (E403 Forbidden)');
+        print('The following skills could not be installed because you do not have permission:');
+        for (final String skill in allMissingSkills) {
+          print('  - $skill');
+        }
+        print('======================================================================\n');
+      }
+
       exit(success ? 0 : 1);
     }
   } else {
@@ -153,30 +170,56 @@ List<String> checkMissingSkills(File lockFile) {
 /// Launches the npx skill installation recovery process in the [workingDir].
 ///
 /// Pipes processes outputs to [stdout] and [stderr] to make sure all error details
-/// are visible to the user. Returns true if command finishes successfully.
-Future<bool> runNpxInstall(Directory workingDir) async {
-  print('Executing: npx skill experimental_install inside ${workingDir.path}');
+/// are visible to the user. Returns installation results with E403 detection.
+Future<InstallResult> runNpxInstall(Directory workingDir) async {
+  print('Executing: npx skills experimental_install inside ${workingDir.path}');
   try {
     final Process process = await Process.start(
       'npx',
-      ['skill', 'experimental_install'],
+      ['skills', 'experimental_install'],
       workingDirectory: workingDir.path,
       runInShell: true,
     );
 
-    process.stdout.listen(stdout.add);
-    process.stderr.listen(stderr.add);
+    bool is403 = false;
+
+    final Future<void> stdoutDone = process.stdout.transform(utf8.decoder).listen((data) {
+      stdout.write(data);
+      final String lower = data.toLowerCase();
+      if (lower.contains('403 forbidden') || lower.contains('e403')) {
+        is403 = true;
+      }
+    }).asFuture();
+
+    final Future<void> stderrDone = process.stderr.transform(utf8.decoder).listen((data) {
+      stderr.write(data);
+      final String lower = data.toLowerCase();
+      if (lower.contains('403 forbidden') || lower.contains('e403')) {
+        is403 = true;
+      }
+    }).asFuture();
 
     final int exitCode = await process.exitCode;
+    await Future.wait([stdoutDone, stderrDone]);
+
     if (exitCode == 0) {
       print('Skills installed successfully!');
-      return true;
+      return InstallResult(success: true, is403Error: false);
     } else {
-      print('npx skill experimental_install failed with exit code $exitCode.');
-      return false;
+      print('npx skills experimental_install failed with exit code $exitCode.');
+      return InstallResult(success: false, is403Error: is403);
     }
   } on ProcessException catch (e) {
     print('ProcessException executing npx installer command: ${e.message}');
-    return false;
+    return InstallResult(success: false, is403Error: false);
   }
+}
+
+/// Represents the result of npx skill installation process.
+class InstallResult {
+  /// Creates an [InstallResult].
+  InstallResult({required this.success, required this.is403Error});
+
+  final bool success;
+  final bool is403Error;
 }

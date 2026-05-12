@@ -17,7 +17,7 @@ To automatically restore and bootstrap these skills, run the embedded `agent_doc
 dart run .agents/skills/agent-doctor/scripts/agent_doctor.dart
 ```
 
-This command scans for `skills-lock.json` files, detects if referenced folders are missing from the disk, and runs `npx skill experimental_install` to download them.
+This command scans for `skills-lock.json` files, detects if referenced folders are missing from the disk, and runs `npx skills experimental_install` to download them.
 
 ## Setup evaluation and diagnostics
 
@@ -70,6 +70,6 @@ If any of the expected tools are missing or not set up, perform these corrective
 3.  **Missing GitHub CLI**: Install the GitHub CLI via Homebrew (`brew install gh`), and log in by running `gh auth login`.
 4.  **Missing Node/NPX**: Install Node.js via Homebrew (`brew install node`).
 5.  **NPM Registry Authentication (403 Forbidden / E403 Errors)**:
-    If `npx skill` execution fails because of permission issues:
-    *   Expose the full error details printed by `agent_doctor.dart`.
-    *   Explain that they may need to configure private npm registry tokens in `.npmrc` or authenticate using a credential helper.
+    The `agent_doctor.dart` tool automatically captures `403 Forbidden` or `E403` errors in standard output/error streams, prints a prominent authentication warning block, and explicitly lists the uninstalled skills that were blocked by permission checks.
+    *   Expose the full elevated error details and the list of uninstalled skills.
+    *   Explain that the user needs to configure private npm registry credentials inside `.npmrc` or authenticate using a credential helper (e.g., run `npx google-artifact-registry-auth` for Google Artifact Registry).
