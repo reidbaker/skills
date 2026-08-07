@@ -5,8 +5,8 @@ description: >-
   pre-commit hooks.
 version: 0.5.0
 resolution: workspace
-repository: https://github.com/flutter/agent-plugins
-issue_tracker: https://github.com/flutter/agent-plugins/issues
+repository: https://github.com/google/skills_lint.dart
+issue_tracker: https://github.com/google/skills_lint.dart/issues
 
 topics:
   - agent-skills

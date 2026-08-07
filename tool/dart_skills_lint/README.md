@@ -1,5 +1,9 @@
 # dart_skills_lint
 
+This is not an officially supported Google product. This project is not
+eligible for the [Google Open Source Software Vulnerability Rewards Program](https://bughunters.google.com/open-source-security).
+
+
 A static analysis linter for Agent Skills to ensure they meet the specification in presubmit checks. This project is a Dart package and can be run as a CLI tool to validate your skills directory before committing.
 
 ## Table of Contents
@@ -67,7 +71,7 @@ Release, verifies its SHA256, and installs to `/usr/local/bin` (with a
 `sudo` fallback). Supports macOS arm64 + x64 and Linux x64 + arm64.
 
 ```bash
-curl -fsSL https://github.com/flutter/agent-plugins/releases/latest/download/install.sh | bash
+curl -fsSL https://github.com/google/skills_lint.dart/releases/latest/download/install.sh | bash
 ```
 
 Optional env vars (set before the `bash` part):
@@ -91,13 +95,13 @@ This step goes away once notarized builds ship.
 
 For environments where piping a script to `bash` isn't acceptable.
 Grab the tarball for your platform from
-[the latest GitHub Release](https://github.com/flutter/agent-plugins/releases/latest)
+[the latest GitHub Release](https://github.com/google/skills_lint.dart/releases/latest)
 and verify its SHA256 against the release's `SHA256SUMS` asset.
 
 ```bash
 TARGET="linux-x64"     # or: macos-arm64, macos-x64, linux-arm64
 VERSION="0.5.0"
-BASE="https://github.com/flutter/agent-plugins/releases/download/dart_skills_lint-v${VERSION}"
+BASE="https://github.com/google/skills_lint.dart/releases/download/dart_skills_lint-v${VERSION}"
 curl -fsSLO "${BASE}/dart_skills_lint-${TARGET}.tar.gz"
 curl -fsSLO "${BASE}/SHA256SUMS"
 grep " dart_skills_lint-${TARGET}.tar.gz$" SHA256SUMS | sha256sum -c -
